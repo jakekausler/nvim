@@ -564,6 +564,9 @@ require('lazy').setup {
       vim.cmd [[cab cc CodeCompanion]]
     end,
   },
+  { -- Github Copilot
+    'github/copilot.vim',
+  },
   -- ╭──────────────────────────╮
   -- │       LSP Plugins        │
   -- ╰──────────────────────────╯
