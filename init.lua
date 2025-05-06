@@ -103,6 +103,7 @@ vim.opt.sessionoptions = 'blank,buffers,curdir,folds,help,tabpages,winsize,winpo
 -- Tree Sitter Folding
 vim.opt.foldmethod = 'expr'
 vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.opt.foldlevel = 99
 
 -- ╭──────────────────────────╮
 -- │        Hard Mode         │
