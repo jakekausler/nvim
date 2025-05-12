@@ -1001,3 +1001,12 @@ vim.keymap.set('i', '<A-j>', '<C-o>jdd', { noremap = true }) -- Delete the line 
 vim.keymap.set('i', '<A-k>', '<C-o>kdd', { noremap = true }) -- Delete the line above
 vim.keymap.set('i', '<A-q>', '<C-u>', { noremap = true }) -- Delete to start of line
 vim.keymap.set('i', '<A-e>', '<C-o>D', { noremap = true }) -- Delete to start of line
+
+-- Increment Number Overrides
+vim.keymap.set('n', '<leader>z', '<C-a>', { noremap = true }) -- Increment number
+vim.keymap.set('v', '<leader>z', '<C-a>', { noremap = true }) -- Increment number
+vim.keymap.set('v', '<leader>gz', 'g<C-a>', { noremap = true }) -- Increment number
+-- Decrement Number Overrides
+vim.keymap.set('n', '<leader>x', '<C-x>', { noremap = true }) -- Decrement number
+vim.keymap.set('v', '<leader>x', '<C-x>', { noremap = true }) -- Decrement number
+vim.keymap.set('v', '<leader>gx', 'g<C-x>', { noremap = true }) -- Decrement number
