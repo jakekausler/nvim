@@ -206,6 +206,11 @@ require('lazy').setup {
       },
     },
   },
+  { -- Allows selecting multiple incremental text
+    'mg979/vim-visual-multi',
+    branch = 'master',
+    event = 'VeryLazy',
+  },
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
     event = 'VimEnter', -- Sets the loading event to 'VimEnter'
@@ -1056,3 +1061,30 @@ vim.keymap.set('n', '<leader>qp', '<cmd>cprev<CR>', { desc = '[Q]uickfix [P]revi
 
 -- Remove Highlights on escape
 vim.keymap.set('n', '<Esc>', '<cmd>noh<CR>', { desc = 'Remove highlights' })
+
+-- Smart Command Line History (when not in wildmenu)
+vim.keymap.set('c', '<C-n>', function()
+  return vim.fn.wildmenumode() == 1 and '<C-n>' or '<Down>'
+end, { expr = true, noremap = true })
+vim.keymap.set('c', '<C-p>', function()
+  return vim.fn.wildmenumode() == 1 and '<C-p>' or '<Up>'
+end, { expr = true, noremap = true })
+
+-- Quick Move Line
+vim.keymap.set('n', '[e', function()
+  vim.cmd('move -1-' .. vim.v.count1)
+end, { silent = true })
+vim.keymap.set('n', ']e', function()
+  vim.cmd('move +' .. vim.v.count1)
+end, { silent = true })
+
+-- Don't lose selection when indenting
+vim.keymap.set('v', '<', '<gv', { desc = 'Indent left and keep selection' })
+vim.keymap.set('v', '>', '>gv', { desc = 'Indent right and keep selection' })
+
+-- Show errors and warnings in a floating window
+vim.api.nvim_create_autocmd('CursorHold', {
+  callback = function()
+    vim.diagnostic.open_float(nil, { focusable = false, source = 'if_many' })
+  end,
+})
