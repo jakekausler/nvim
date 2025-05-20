@@ -1,4 +1,4 @@
--- ╭──────────────────────────╮
+-- ╭───────-──────────────────╮
 -- │      Global Settings     │
 -- ╰──────────────────────────╯
 -- Set <space> as the leader key
@@ -275,6 +275,13 @@ require('lazy').setup {
     },
     config = function()
       require('telescope').setup {
+        defaults = {
+          mappings = {
+            i = {
+              ['<C-y>'] = 'select_default',
+            },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -478,9 +485,14 @@ require('lazy').setup {
     lazy = false,
     ---@module "auto-session"
     ---@type AutoSession.Config
+    keys = {
+      -- Will use Telescope if installed or a vim.ui.select picker otherwise
+      { '<leader>wr', '<cmd>SessionSearch<CR>', desc = 'Session search' },
+      { '<leader>ws', '<cmd>SessionSave<CR>', desc = 'Save session' },
+      { '<leader>wa', '<cmd>SessionToggleAutoSave<CR>', desc = 'Toggle autosave' },
+    },
     opts = {
       log_level = 'info',
-      --auto_session_enable_last_session = true,
       auto_session_root_dir = vim.fn.stdpath 'data' .. '/sessions/',
       auto_session_enabled = true,
       auto_session_use_git_branch = false,
@@ -758,13 +770,17 @@ require('lazy').setup {
             })
           end,
         },
+        tsserver = {},
       }
 
       -- Ensure the servers and tools above are installed
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
+      local ensure_installed = {
+        'pyright',
+        'lua-language-server',
+        'eslint-lsp',
+        'stylua',
+        'typescript-language-server',
+      }
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       require('mason-lspconfig').setup {
@@ -848,7 +864,7 @@ require('lazy').setup {
     },
     opts = {
       keymap = {
-        preset = 'super-tab',
+        preset = 'default',
         ['<C-k>'] = {},
         ['<C-s>'] = { 'show_signature', 'hide_signature', 'fallback' },
       },
@@ -946,7 +962,7 @@ vim.keymap.set('n', 'j', "(v:count == 0 ? 'gj' : 'j')", expr)
 vim.keymap.set('n', 'k', "(v:count == 0 ? 'gk' : 'k')", expr)
 
 -- Toggle NeoTree or focus it if already open
-vim.keymap.set('n', '<leader>b', function()
+vim.keymap.set('n', '<leader>B', function()
   local current_ft = vim.bo.filetype
 
   -- If currently in Neo-tree, close it
@@ -987,20 +1003,20 @@ vim.keymap.set(modes, '<C-h>', '<Left>', { noremap = true })
 vim.keymap.set(modes, '<C-l>', '<Right>', { noremap = true })
 vim.keymap.set(modes, '<C-j>', '<Down>', { noremap = true })
 vim.keymap.set(modes, '<C-k>', '<Up>', { noremap = true })
-vim.keymap.set(modes, '<C-w>', '<C-Right>', { noremap = true }) -- Word forward
-vim.keymap.set(modes, '<C-b>', '<C-Left>', { noremap = true }) -- Word backward
-vim.keymap.set(modes, '<C-e>', '<End>', { noremap = true }) -- End of line
-vim.keymap.set(modes, '<C-q>', '<Home>', { noremap = true }) -- Start of line
-vim.keymap.set(modes, '<C-u>', '<PageUp>', { noremap = true }) -- Page up
-vim.keymap.set(modes, '<C-d>', '<PageDown>', { noremap = true }) -- Page down
+-- vim.keymap.set(modes, '<C-w>', '<C-Right>', { noremap = true }) -- Word forward
+-- vim.keymap.set(modes, '<C-b>', '<C-Left>', { noremap = true }) -- Word backward
+-- vim.keymap.set(modes, '<C-e>', '<End>', { noremap = true }) -- End of line
+-- vim.keymap.set(modes, '<C-q>', '<Home>', { noremap = true }) -- Start of line
+-- vim.keymap.set(modes, '<C-u>', '<PageUp>', { noremap = true }) -- Page up
+-- vim.keymap.set(modes, '<C-d>', '<PageDown>', { noremap = true }) -- Page down
 
 -- Delete in insert/command mode
 vim.keymap.set(modes, '<A-h>', '<Backspace>', { noremap = true }) -- Backspace
 vim.keymap.set(modes, '<A-l>', '<Delete>', { noremap = true }) -- Delete
-vim.keymap.set('i', '<A-j>', '<C-o>jdd', { noremap = true }) -- Delete the line below
-vim.keymap.set('i', '<A-k>', '<C-o>kdd', { noremap = true }) -- Delete the line above
-vim.keymap.set('i', '<A-q>', '<C-u>', { noremap = true }) -- Delete to start of line
-vim.keymap.set('i', '<A-e>', '<C-o>D', { noremap = true }) -- Delete to start of line
+-- vim.keymap.set('i', '<A-j>', '<C-o>jdd', { noremap = true }) -- Delete the line below
+-- vim.keymap.set('i', '<A-k>', '<C-o>kdd', { noremap = true }) -- Delete the line above
+-- vim.keymap.set('i', '<A-q>', '<C-u>', { noremap = true }) -- Delete to start of line
+-- vim.keymap.set('i', '<A-e>', '<C-o>D', { noremap = true }) -- Delete to start of line
 
 -- Increment Number Overrides
 vim.keymap.set('n', '<leader>z', '<C-a>', { noremap = true }) -- Increment number
@@ -1010,3 +1026,33 @@ vim.keymap.set('v', '<leader>gz', 'g<C-a>', { noremap = true }) -- Increment num
 vim.keymap.set('n', '<leader>x', '<C-x>', { noremap = true }) -- Decrement number
 vim.keymap.set('v', '<leader>x', '<C-x>', { noremap = true }) -- Decrement number
 vim.keymap.set('v', '<leader>gx', 'g<C-x>', { noremap = true }) -- Decrement number
+
+-- Indent in insert mode
+-- vim.keymap.set('i', '<A-d>', '<C-d>', { noremap = true }) -- De-indent
+-- vim.keymap.set('i', '<A-t>', '<C-t>', { noremap = true }) -- Indent
+
+-- Easier retrigger of last macro
+vim.keymap.set('n', 'Q', '@@', { desc = 'Replay last macro' })
+
+-- Buffer Navigation
+vim.keymap.set('n', '<leader>bn', '<cmd>bn<CR>', { desc = '[B]uffer [N]ext' })
+vim.keymap.set('n', '<leader>bp', '<cmd>bp<CR>', { desc = '[B]uffer [P]revious' })
+vim.keymap.set('n', '<leader>bl', '<cmd>ls<CR>', { desc = '[B]uffer [L]ast' })
+vim.keymap.set('n', '<leader>bd', '<cmd>bd<CR>', { desc = '[B]uffer [D]elete' })
+vim.keymap.set('n', '<leader>bg', function()
+  local count = vim.v.count
+  if count == 0 then
+    vim.notify('No buffer number provided', vim.log.levels.WARN)
+  else
+    vim.cmd('buffer ' .. count)
+  end
+end, { desc = '[B]uffer [G]oto <count>' })
+vim.keymap.set('n', '<leader>b#', '<cmd>buffer #<CR>', { desc = '[B]uffer [#] Previous' })
+
+-- Quickfix Navigation
+vim.keymap.set('n', '<leader>qf', '<cmd>copen<CR>', { desc = '[Q]uick[f]ix Open' })
+vim.keymap.set('n', '<leader>qn', '<cmd>cnext<CR>', { desc = '[Q]uickfix [N]ext' })
+vim.keymap.set('n', '<leader>qp', '<cmd>cprev<CR>', { desc = '[Q]uickfix [P]revious' })
+
+-- Remove Highlights on escape
+vim.keymap.set('n', '<Esc>', '<cmd>noh<CR>', { desc = 'Remove highlights' })
