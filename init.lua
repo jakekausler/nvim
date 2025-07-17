@@ -948,10 +948,10 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
-vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
-vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
-vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
-vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
+--vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
+--vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
+--vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
+--vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
 
 -- Copilot
 vim.keymap.set('i', '<C-c>', 'copilot#Accept("\\<CR>")', {
@@ -1042,7 +1042,9 @@ vim.keymap.set('n', 'Q', '@@', { desc = 'Replay last macro' })
 -- Buffer Navigation
 vim.keymap.set('n', '<leader>bn', '<cmd>bn<CR>', { desc = '[B]uffer [N]ext' })
 vim.keymap.set('n', '<leader>bp', '<cmd>bp<CR>', { desc = '[B]uffer [P]revious' })
-vim.keymap.set('n', '<leader>bl', '<cmd>ls<CR>', { desc = '[B]uffer [L]ast' })
+vim.keymap.set('n', '<leader>bf', '<cmd>bf<CR>', { desc = '[B]uffer [F]irst' })
+vim.keymap.set('n', '<leader>bl', '<cmd>bl<CR>', { desc = '[B]uffer [L]ast' })
+vim.keymap.set('n', '<leader>bs', '<cmd>ls<CR>', { desc = 'List [B]uffer[s]' })
 vim.keymap.set('n', '<leader>bd', '<cmd>bd<CR>', { desc = '[B]uffer [D]elete' })
 vim.keymap.set('n', '<leader>bg', function()
   local count = vim.v.count
@@ -1055,9 +1057,19 @@ end, { desc = '[B]uffer [G]oto <count>' })
 vim.keymap.set('n', '<leader>b#', '<cmd>buffer #<CR>', { desc = '[B]uffer [#] Previous' })
 
 -- Quickfix Navigation
-vim.keymap.set('n', '<leader>qf', '<cmd>copen<CR>', { desc = '[Q]uick[f]ix Open' })
+vim.keymap.set('n', '<leader>qs', '<cmd>copen<CR>', { desc = '[Q]uick[f]ix Open' })
 vim.keymap.set('n', '<leader>qn', '<cmd>cnext<CR>', { desc = '[Q]uickfix [N]ext' })
 vim.keymap.set('n', '<leader>qp', '<cmd>cprev<CR>', { desc = '[Q]uickfix [P]revious' })
+vim.keymap.set('n', '<leader>qf', '<cmd>cfirst<CR>', { desc = '[Q]uickfix [F]irst' })
+vim.keymap.set('n', '<leader>ql', '<cmd>clast<CR>', { desc = '[Q]uickfix [L]ast' })
+vim.keymap.set('n', '<leader>qg', function()
+  local count = vim.v.count
+  if count == 0 then
+    vim.notify('No quickfix number provided', vim.log.levels.WARN)
+  else
+    vim.cmd('cc ' .. count)
+  end
+end, { desc = '[Q]uickfix [G]oto <count>' })
 
 -- Remove Highlights on escape
 vim.keymap.set('n', '<Esc>', '<cmd>noh<CR>', { desc = 'Remove highlights' })
