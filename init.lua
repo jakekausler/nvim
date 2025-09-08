@@ -17,7 +17,6 @@ vim.g.copilot_no_tab_map = true
 -- ╰──────────────────────────╯
 -- Make line numbers default
 vim.opt.number = true
-vim.opt.relativenumber = true
 
 -- Enable mouse mode
 vim.opt.mouse = 'a'
@@ -59,7 +58,7 @@ vim.opt.inccommand = 'split'
 vim.opt.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.opt.scrolloff = 10
+vim.opt.scrolloff = 5
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
@@ -145,7 +144,7 @@ end
 
 -- Map the toggle function to <leader>hm
 vim.keymap.set('n', '<leader>hm', toggle_hardmode, { noremap = true, silent = true })
-toggle_hardmode()
+--toggle_hardmode()
 
 -- ╭──────────────────────────╮
 -- │       Autocommands       │
@@ -204,6 +203,66 @@ require('lazy').setup {
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      on_attach = function(bufnr)
+        local gitsigns = require 'gitsigns'
+
+        local function map(mode, lhs, rhs, desc, opts)
+          opts = opts or {}
+          if desc then
+            opts.desc = desc
+          end
+          opts.buffer = bufnr
+          vim.keymap.set(mode, lhs, rhs, opts)
+        end
+
+        -- Navigation
+        map('n', 'g]c', function()
+          if vim.wo.diff then
+            vim.cmd.normal { 'g]c', bang = true }
+          else
+            gitsigns.nav_hunk 'next'
+          end
+        end, 'Next [C]hange')
+
+        map('n', '[c', function()
+          if vim.wo.diff then
+            vim.cmd.normal { '[c', bang = true }
+          else
+            gitsigns.nav_hunk 'prev'
+          end
+        end, 'Previous [C]hange')
+
+        -- Actions
+        map('n', '<leader>hs', gitsigns.stage_hunk, '[H]unk [S]tage')
+        map('n', '<leader>hr', gitsigns.reset_hunk, '[H]unk [R]eset')
+
+        map('v', '<leader>hs', function()
+          gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
+        end, '[H]unk [S]tage')
+
+        map('v', '<leader>hr', function()
+          gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
+        end, '[H]unk [R]eset')
+
+        map('n', '<leader>hS', gitsigns.stage_buffer, '[H]unk [S]tage Buffer')
+        map('n', '<leader>hR', gitsigns.reset_buffer, '[H]unk [R]eset Buffer')
+
+        map('n', '<leader>hb', function()
+          gitsigns.blame_line { full = true }
+        end, '[H]unk [B]lame Line')
+
+        map('n', '<leader>hQ', function()
+          gitsigns.setqflist 'all'
+        end, '[H]unk [Q]uickfix All')
+        map('n', '<leader>hq', gitsigns.setqflist, '[H]unk [Q]uickfix')
+
+        -- Toggles
+        map('n', '<leader>tb', gitsigns.toggle_current_line_blame, '[T]oggle [B]lame Line')
+        map('n', '<leader>tw', gitsigns.toggle_word_diff, '[T]oggle [W]ord Diff')
+
+        -- Text object
+        map({ 'o', 'x' }, 'ih', gitsigns.select_hunk, '[I]nside [H]unk')
+      end,
     },
   },
   { -- Allows selecting multiple incremental text
@@ -268,6 +327,7 @@ require('lazy').setup {
     event = 'VimEnter',
     dependencies = {
       'nvim-lua/plenary.nvim',
+      'debugloop/telescope-undo.nvim',
       {
         'nvim-telescope/telescope-fzf-native.nvim',
         build = 'make',
@@ -291,6 +351,7 @@ require('lazy').setup {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
           },
+          undo = {},
         },
       }
 
@@ -299,35 +360,74 @@ require('lazy').setup {
       pcall(require('telescope').load_extension, 'ui-select')
 
       local builtin = require 'telescope.builtin'
+
+      -- helper to wrap a picker and insert the word under cursor
+      local function with_cword(picker)
+        return function()
+          picker { default_text = vim.fn.expand '<cword>' }
+        end
+      end
+
+      -- Search with no default text
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
-      vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-
       vim.keymap.set('n', '<leader>/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
           previewer = false,
         })
       end, { desc = '[/] Fuzzily search in current buffer' })
-
       vim.keymap.set('n', '<leader>s/', function()
         builtin.live_grep {
           grep_open_files = true,
           prompt_title = 'Live Grep in Open Files',
         }
       end, { desc = '[S]earch [/] in Open Files' })
-
-      -- Shortcut for searching your Neovim configuration files
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      -- Search with cword default text
+      vim.keymap.set('n', '<leader>Sh', with_cword(builtin.help_tags), { desc = '[S]earch [H]elp with cword' })
+      vim.keymap.set('n', '<leader>Sk', with_cword(builtin.keymaps), { desc = '[S]earch [K]eymaps with cword' })
+      vim.keymap.set('n', '<leader>Sf', with_cword(builtin.find_files), { desc = '[S]earch [F]iles with cword' })
+      vim.keymap.set('n', '<leader>Ss', with_cword(builtin.builtin), { desc = '[S]earch [S]elect Telescope with cword' })
+      vim.keymap.set('n', '<leader>Sg', with_cword(builtin.live_grep), { desc = '[S]earch by [G]rep with cword' })
+      vim.keymap.set('n', '<leader>Sd', with_cword(builtin.diagnostics), { desc = '[S]earch [D]iagnostics with cword' })
+      vim.keymap.set('n', '<leader>Sr', with_cword(builtin.resume), { desc = '[S]earch [R]esume with cword' })
+      vim.keymap.set('n', '<leader>S.', with_cword(builtin.oldfiles), { desc = '[S]earch Recent Files with cword' })
+      vim.keymap.set('n', '<leader>?', function()
+        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+          winblend = 10,
+          previewer = false,
+          default_text = vim.fn.expand '<cword>',
+        })
+      end, { desc = '[/] Fuzzily search in current buffer' })
+      vim.keymap.set('n', '<leader>S/', function()
+        builtin.live_grep {
+          grep_open_files = true,
+          prompt_title = 'Live Grep in Open Files',
+          default_text = vim.fn.expand '<cword>',
+        }
+      end, { desc = '[S]earch [/] in Open Files' })
+      vim.keymap.set('n', '<leader>Sn', function()
+        builtin.find_files {
+          cwd = vim.fn.stdpath 'config',
+          default_text = vim.fn.expand '<cword>',
+        }
+      end, { desc = '[S]earch [N]eovim files' })
+
+      -- Search for buffers
+      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+
+      -- Show undo tree
+      vim.keymap.set('n', '<leader>u', '<cmd>Telescope undo<cr>', { desc = '[U]ndo Tree' })
     end,
   },
   { -- Highlight todo, notes, etc in comments
@@ -529,57 +629,6 @@ require('lazy').setup {
         },
       },
     },
-  },
-  { -- Visualize Undo History
-    'jiaoshijie/undotree',
-    dependencies = 'nvim-lua/plenary.nvim',
-    config = function()
-      require('undotree').setup()
-    end,
-    keys = {
-      {
-        '<leader>u',
-        function()
-          require('undotree').toggle()
-        end,
-        desc = 'Toggle [U]ndotree',
-      },
-    },
-  },
-  { -- Neovim plugin configuration for AI Assisted Coding
-    'olimorris/codecompanion.nvim',
-    opts = {
-      strategies = {
-        chat = {
-          adapter = 'openai',
-        },
-        inline = {
-          adapter = 'openai',
-        },
-        cmd = {
-          adapter = 'openai',
-        },
-      },
-      display = {
-        action_palette = {
-          provider = 'telescope',
-        },
-      },
-    },
-    dependencies = {
-      'nvim-lua/plenary.nvim',
-      'nvim-treesitter/nvim-treesitter',
-    },
-    config = function(_, opts)
-      require('codecompanion').setup(opts)
-
-      vim.keymap.set({ 'n', 'v' }, '<C-a>', '<cmd>CodeCompanionActions<cr>', { noremap = true, silent = true })
-      vim.keymap.set({ 'n', 'v' }, '<LocalLeader>a', '<cmd>CodeCompanionChat Toggle<cr>', { noremap = true, silent = true })
-      vim.keymap.set('v', 'ga', '<cmd>CodeCompanionChat Add<cr>', { noremap = true, silent = true })
-
-      -- Abbreviation: type `:cc` and get `:CodeCompanion`
-      vim.cmd [[cab cc CodeCompanion]]
-    end,
   },
   { -- Github Copilot
     'github/copilot.vim',
@@ -785,6 +834,7 @@ require('lazy').setup {
         'eslint-lsp',
         'stylua',
         'typescript-language-server',
+        'rust-analyzer',
       }
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -842,6 +892,11 @@ require('lazy').setup {
         html = { 'prettierd', 'prettier', stop_after_first = true },
         typescript = { 'prettierd', 'prettier', stop_after_first = true },
         typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        css = { 'prettierd', 'prettier', stop_after_first = true },
+        scss = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        jsonc = { 'prettierd', 'prettier', stop_after_first = true },
+        rust = { 'rustfmt' },
         ['*'] = { 'trim_whitespace' },
       },
     },
@@ -898,35 +953,21 @@ require('lazy').setup {
   -- ╭──────────────────────────╮
   -- │   Color Scheme Plugins   │
   -- ╰──────────────────────────╯
+  -- {
+  --   'ellisonleao/gruvbox.nvim',
+  --   priority = 1000, -- Make sure to load this before all the other start plugins.
+  --   config = function()
+  --     ---@diagnostic disable-next-line: missing-fields
+  --     require('gruvbox').setup {
+  --       terminal_colors = true,
+  --     }
+  --     vim.cmd.colorscheme 'gruvbox'
+  --   end,
+  -- },
   {
-    'ellisonleao/gruvbox.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+    'Koalhack/darcubox-nvim',
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('gruvbox').setup {
-        terminal_colors = true,
-        --styles = {
-        --  comments = { italic = false }, -- Disable italics in comments
-        --},
-        --on_highlights = function(hl, c)
-        --  local prompt = '#2d3149'
-        --  hl.NormalFloat = { bg = c.bg_dark }
-        --  hl.FloatBorder = { fg = c.blue, bg = c.bg_dark }
-        --  hl.FloatTitle = { fg = c.orange }
-
-        --  -- Split borders
-        --  hl.VertSplit = { fg = c.blue }
-        --  hl.WinSeparator = { fg = c.blue }
-        --  -- hl.StatusLine = { fg = c.yellow, bg = c.bg_dark } -- Managed by mini.statusline
-        --  hl.StatusLineNC = { fg = c.black, bg = c.blue6 }
-
-        --  -- Tabline styling
-        --  hl.TabLine = { fg = c.fg_dark, bg = c.bg_highlight } -- Inactive tabs
-        --  hl.TabLineSel = { fg = c.fg, bg = c.bg, bold = true } -- Active tab
-        --  hl.TabLineFill = { bg = c.bg_highlight } -- Background fill
-        --end,
-      }
-      vim.cmd.colorscheme 'gruvbox'
+      vim.cmd 'colorscheme darcubox'
     end,
   },
   -- Import other plugins from `./lua/custom/plugins/*.lua`
@@ -948,10 +989,6 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
---vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
---vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
---vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
---vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
 
 -- Copilot
 vim.keymap.set('i', '<C-c>', 'copilot#Accept("\\<CR>")', {
@@ -992,11 +1029,36 @@ vim.keymap.set('n', '<leader>B', function()
   end
 end, { desc = 'Smart focus/close NeoTree' })
 
--- Quick toggle line numbers
+-- Smarter three-way toggle for line numbers in Neovim
+-- Cycle: Absolute → Relative → Off → Absolute ...
+-- Detects current mode so it always continues naturally
+-- Displays the new mode in a :echo message
 vim.keymap.set('n', '<leader>tn', function()
-  vim.opt.number = not vim.opt.number
-  vim.opt.relativenumber = not vim.opt.relativenumber
-end, { desc = '[T]oggle line [N]umbers' })
+  local num = vim.o.number -- true if absolute numbers are on
+  local rnum = vim.o.relativenumber -- true if relative numbers are on
+
+  if not num and not rnum then
+    -- Off → Absolute
+    vim.o.number = true
+    vim.o.relativenumber = false
+    vim.notify('Line numbers: Absolute', vim.log.levels.INFO)
+  elseif num and not rnum then
+    -- Absolute → Relative
+    vim.o.number = true
+    vim.o.relativenumber = true
+    vim.notify('Line numbers: Relative', vim.log.levels.INFO)
+  elseif num and rnum then
+    -- Relative → Off
+    vim.o.number = false
+    vim.o.relativenumber = false
+    vim.notify('Line numbers: Off', vim.log.levels.INFO)
+  else
+    -- Weird config → reset to Absolute
+    vim.o.number = true
+    vim.o.relativenumber = false
+    vim.notify('Line numbers: Absolute (reset)', vim.log.levels.WARN)
+  end
+end, { desc = '[T]oggle line [N]umbers (cycle, state-aware)' })
 
 -- Yank to system clipboard
 vim.keymap.set('n', '<leader>y', '"+y', { desc = '[Y]ank to system clipboard' })
@@ -1100,3 +1162,21 @@ vim.api.nvim_create_autocmd('CursorHold', {
     vim.diagnostic.open_float(nil, { focusable = false, source = 'if_many' })
   end,
 })
+
+-- TODO Comment Jumping
+vim.keymap.set('n', ']t', function()
+  require('todo-comments').jump_next()
+end, { desc = 'Next todo comment' })
+vim.keymap.set('n', '[t', function()
+  reqtire('todo-comments').jump_prev()
+end, { desc = 'Previous todo comment' })
+
+-- Add TODOs to quickfix list
+vim.keymap.set('n', '<leader>qt', function()
+  vim.cmd 'TodoQuickFix'
+end, { desc = '[Q]uickfix [T]ODOs' })
+
+-- Search for TODOs with Telescope
+vim.keymap.set('n', '<leader>st', function()
+  vim.cmd 'TodoTelescope'
+end, { desc = '[S]earch [T]ODOs' })
