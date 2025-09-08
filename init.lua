@@ -1,8 +1,6 @@
--- Global Settings
+-- Set leader keys (must be set before plugins load)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-vim.g.have_nerd_font = true
-vim.g.copilot_no_tab_map = true
 
 -- Load configuration
 require('config.options')
