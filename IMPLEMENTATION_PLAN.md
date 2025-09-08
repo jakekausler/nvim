@@ -269,7 +269,7 @@ return {
 **Goal**: Clean up global keymaps, ensure no plugin-specific ones remain
 **Success Criteria**: Only truly global keymaps in keymaps.lua
 **Tests**: All global navigation and utility keymaps work
-**Status**: Not Started
+**Status**: Completed
 
 ### Global Keymaps Only:
 - Window navigation (Ctrl+hjkl)
