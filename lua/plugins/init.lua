@@ -16,11 +16,11 @@ vim.opt.rtp:prepend(lazypath)
 -- Function to get all plugin files in the plugins directory
 local function get_plugin_imports()
   local imports = {}
-  local plugin_dir = vim.fn.stdpath('config') .. '/lua/plugins'
-  
+  local plugin_dir = vim.fn.stdpath 'config' .. '/lua/plugins'
+
   -- Get all .lua files in the plugins directory
   local files = vim.fn.glob(plugin_dir .. '/*.lua', false, true)
-  
+
   for _, file in ipairs(files) do
     local filename = vim.fn.fnamemodify(file, ':t:r') -- Get filename without extension
     -- Skip init.lua (this file)
@@ -28,13 +28,12 @@ local function get_plugin_imports()
       table.insert(imports, { import = 'plugins.' .. filename })
     end
   end
-  
+
   return imports
 end
 
 -- Setup lazy.nvim
 local plugin_imports = get_plugin_imports()
--- Add custom user plugins
-table.insert(plugin_imports, { import = 'custom.plugins' })
 
 require('lazy').setup(plugin_imports)
+
